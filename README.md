@@ -36,6 +36,40 @@ On your AJAX request you get 4 new parameters :
 	* This function must return true or false. On false, the cached response is removed.
 	* Default: null
 
+## Notification Poller - with jQuery.Deferred
+```javascript
+	function ajaxCached(cacheKey, cacheTTL, reqtype, data) {
+		var aDeferred = $.Deferred();
+		$.ajax({
+			url: '/api',
+			data: data,
+			dataType: 'json',
+			type: reqtype,
+			
+			localCache: true,
+			cacheKey: cacheKey,
+			cacheTTL: cacheTTL,
+			isCacheValid: function() { return true; },
+			success: function(response) {
+				aDeferred.resolve(response);
+			}, error: function() {
+				aDeferred.reject();
+			}
+		});
+		return aDeferred.promise();
+	}
+	function notificationsPoller() {
+		var interval = 120; // 2 min
+		var cachettl = interval / 2; // 1 min
+		ajaxCached('notificationsdata', cachettl, 'get', { module: 'notifications' }).then(function() {
+			// CONSUME DATA - Restart next trigger
+			setTimeout(notificationsPoller, interval);
+		}, function() {  
+			// ERROR! 
+		});
+	}
+```
+
 ## Notes
 
 * You can delete the cache by using ```localStorage.clear()```.
