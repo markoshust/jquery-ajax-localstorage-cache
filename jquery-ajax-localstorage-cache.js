@@ -6,7 +6,7 @@ $.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
   // Cache it ?
   if ( !Modernizr.localstorage || !options.localCache ) return;
 
-  var hourstl = options.cacheTTL || 5;
+  var secttl = options.cacheTTL || 5*60*60;
 
   var cacheKey = options.cacheKey || 
                  options.url.replace( /jQuery.*/,'' ) + options.type + options.data;
@@ -46,7 +46,7 @@ $.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
 
     // store timestamp
     if ( ! ttl || ttl === 'expired' ) {
-      localStorage.setItem( cacheKey  + 'cachettl', +new Date() + 1000 * 60 * 60 * hourstl );
+      localStorage.setItem( cacheKey  + 'cachettl', +new Date() + 1000 * secttl );
     }
     
   }
