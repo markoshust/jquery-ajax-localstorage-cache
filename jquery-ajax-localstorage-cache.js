@@ -1,53 +1,56 @@
-// github.com/paulirish/jquery-ajax-localstorage-cache
-// dependent on Modernizr's localStorage test
+// github.com/markoshust/jquery-ajax-localstorage-cache
 
 $.ajaxPrefilter( function( options, originalOptions, jqXHR ) {
-
-  // Cache it ?
-  if ( !Modernizr.localstorage || !options.localCache ) return;
-
-  var secttl = options.cacheTTL || 5*60*60;
-
-  var cacheKey = options.cacheKey || 
-                 options.url.replace( /jQuery.*/,'' ) + options.type + options.data;
+  // Cache?
+  if (!options.localCache) return;
   
-  // isCacheValid is a function to validate cache
-  if ( options.isCacheValid &&  ! options.isCacheValid() ){
+  var secttl = options.cacheTTL || 60*60;
+  var cacheKey = options.cacheKey || options.url.replace(/jQuery.*/, '') + options.type + options.data;
+  
+  // isCacheValid validates cache
+  if (options.isCacheValid &&  ! options.isCacheValid()){
     localStorage.removeItem( cacheKey );
   }
-  // if there's a TTL that's expired, flush this item
+  
+  // Flush item if TTL is expired
   var ttl = localStorage.getItem(cacheKey + 'cachettl');
-  if ( ttl && ttl < +new Date() ){
-    localStorage.removeItem( cacheKey );
-    localStorage.removeItem( cacheKey  + 'cachettl' );
+  if (ttl && ttl < +new Date()){
+    localStorage.removeItem(cacheKey);
+    localStorage.removeItem(cacheKey + 'cachettl');
     ttl = 'expired';
   }
   
-  var value = localStorage.getItem( cacheKey );
-  if ( value ){
-    //In the cache? So get it, apply success callback & abort the XHR request
-    // parse back to JSON if we can.
-    if ( options.dataType.indexOf( 'json' ) === 0 ) value = JSON.parse( value );
-    options.success( value );
-    // Abort is broken on JQ 1.5 :(
-    jqXHR.abort();
-  } else {
-
-    //If it not in the cache, we change the success callback, just put data on localstorage and after that apply the initial callback
-    if ( options.success ) {
-      options.realsuccess = options.success;
-    }  
-    options.success = function( data ) {
-      var strdata = data;
-      if ( this.dataType.indexOf( 'json' ) === 0 ) strdata = JSON.stringify( data );
-      localStorage.setItem( cacheKey, strdata );
-      if ( options.realsuccess ) options.realsuccess( data );
-    };
-
-    // store timestamp
-    if ( ! ttl || ttl === 'expired' ) {
-      localStorage.setItem( cacheKey  + 'cachettl', +new Date() + 1000 * secttl );
+  var value = localStorage.getItem(cacheKey);
+  if (value){
+    // Apply success callback (parse JSON if possible) if in cache & abort the XHR request
+    if (options.dataType.indexOf('json') === 0) {
+      value = JSON.parse(value);
     }
     
+    options.success(value);
+    jqXHR.abort();
+  } else {
+    // If not in cache change success callback
+    if (options.success) {
+      options.realsuccess = options.success;
+    }
+    
+    // Store data on localstorage and apply initial callback
+    options.success = function( data ) {
+      var strdata = data;
+      if (this.dataType.indexOf('json') === 0) {
+        strdata = JSON.stringify(data);
+      }
+      
+      localStorage.setItem(cacheKey, strdata);
+      if (options.realsuccess) {
+        options.realsuccess(data);
+      }
+    };
+    
+    // Store timestamp
+    if (!ttl || ttl === 'expired') {
+      localStorage.setItem(cacheKey + 'cachettl', +new Date() + 1000 * secttl);
+    }
   }
 });
